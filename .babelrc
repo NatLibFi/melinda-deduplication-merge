@@ -1,0 +1,10 @@
+{
+  "presets": ["flow"],
+  "plugins": [
+    ["module-resolver", {
+      "alias": {
+        "melinda-deduplication-common": "./melinda-deduplication-common"
+      }
+    }]
+  ]
+}
