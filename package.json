@@ -1,0 +1,39 @@
+{
+  "name": "melinda-deduplication-merge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "cd melinda-deduplication-common && npm install",
+    "build": "npm run build:main && npm run build:common && npm run copy:main:packagejson && npm run copy:common:packagejson",
+    "build:main": "cd src && babel . -d ../build/",
+    "build:common": "babel melinda-deduplication-common --ignore node_modules,spec.js --out-dir build/melinda-deduplication-common --source-maps",
+    "copy:main:packagejson": "cp package.json build",
+    "copy:common:packagejson": "cp melinda-deduplication-common/package.json build/melinda-deduplication-common/package.json",
+    "test": "mocha *.spec.js",
+    "test:watch": "mocha *.spec.js -w",
+    "flow": "flow",
+    "dev": "concurrently --kill-others 'npm run build:main -- -w' 'npm run build:common -- -w' 'sleep 1 && nodemon -w build build/index.js'"
+  },
+  "author": "Pasi Tuominen <pasi.tuominen@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-eslint": "^7.2.3",
+    "babel-plugin-module-resolver": "^2.7.1",
+    "babel-preset-flow": "^6.23.0",
+    "concurrently": "^3.5.0",
+    "eslint": "^4.1.1",
+    "eslint-import-resolver-babel-module": "^3.0.0",
+    "eslint-plugin-flowtype": "^2.34.0",
+    "eslint-plugin-import": "^2.6.0",
+    "flow-bin": "^0.48.0",
+    "nodemon": "^1.11.0"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "debug": "^2.6.8",
+    "lodash": "^4.17.4",
+    "marc-record-similarity": "^1.0.1"
+  }
+}
