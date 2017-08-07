@@ -10,7 +10,8 @@
     "build:common": "babel melinda-deduplication-common --ignore node_modules,spec.js --out-dir build/melinda-deduplication-common --source-maps",
     "copy:main:packagejson": "cp package.json build",
     "copy:common:packagejson": "cp melinda-deduplication-common/package.json build/melinda-deduplication-common/package.json",
-    "test": "mocha *.spec.js",
+    "test": "npm run flow",
+    "test:unit": "mocha *.spec.js",
     "test:watch": "mocha *.spec.js -w",
     "flow": "flow",
     "dev": "concurrently --kill-others 'npm run build:main -- -w' 'npm run build:common -- -w' 'sleep 1 && nodemon -w build build/index.js'"
