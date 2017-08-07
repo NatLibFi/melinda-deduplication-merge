@@ -14,6 +14,15 @@ const MelindaConnector = require('melinda-deduplication-common/utils/melinda-rec
 const RecordMergeService = require('melinda-deduplication-common/utils/record-merge-service');
 
 const DUPLICATE_DB_API = utils.readEnvironmentVariable('DUPLICATE_DB_API');
+const DUPLICATE_DB_MESSAGE = utils.readEnvironmentVariable('DUPLICATE_DB_MESSAGE', 'Automatic Melinda deduplication');
+const DUPLICATE_DB_PRIORITY = utils.readEnvironmentVariable('DUPLICATE_DB_PRIORITY', 1);
+
+const duplicateDBConfiguration = {
+  endpoint: DUPLICATE_DB_API,
+  messageForDuplicateDatabase: DUPLICATE_DB_MESSAGE,
+  priorityForDuplicateDatabase: DUPLICATE_DB_PRIORITY
+};
+
 const MELINDA_API = utils.readEnvironmentVariable('MELINDA_API', 'http://libtest1.csc.fi:8992/API');
 const X_SERVER = utils.readEnvironmentVariable('X_SERVER', 'http://libtest1.csc.fi:8992/X');
 const MELINDA_USERNAME = utils.readEnvironmentVariable('MELINDA_USERNAME', '');
@@ -36,7 +45,7 @@ async function start() {
   const duplicateQueueConnector = DuplidateQueueConnector.createDuplicateQueueConnector(duplicateChannel);
   logger.log('info', 'Connected');
 
-  const duplicateDatabaseConnector = DuplicateDatabaseConnector.createDuplicateDatabaseConnector(DUPLICATE_DB_API);
+  const duplicateDatabaseConnector = DuplicateDatabaseConnector.createDuplicateDatabaseConnector(duplicateDBConfiguration);
   const melindaConnector = MelindaConnector.createMelindaRecordService(MELINDA_API, X_SERVER, MELINDA_CREDENTIALS);
 
   const recordMergeService = RecordMergeService.createRecordMergeService(melindaConnector);
@@ -63,13 +72,10 @@ async function start() {
     // CAN_MERGE create merged record
     const mergeResult = await recordMergeService.mergeRecords(firstRecord, secondRecord);
     
-    // save merged record to melinda
     const mergedRecordIdentifier = `${mergeResult.record.base}/${mergeResult.record.id}`;
 
-    // mark old records as deleted
     logger.log('info', `Duplicate pair ${pairIdentifierString} has been merged to ${mergedRecordIdentifier}`);
     done();
 
   });
-
 }
