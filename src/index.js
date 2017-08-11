@@ -32,15 +32,15 @@ const MELINDA_CREDENTIALS = {
   password: MELINDA_PASSWORD
 };
 
-const DUPLICATE_QUEUE_AMQP_HOST = utils.readEnvironmentVariable('DUPLICATE_QUEUE_AMQP_HOST');
+const DUPLICATE_QUEUE_AMQP_URL = utils.readEnvironmentVariable('DUPLICATE_QUEUE_AMQP_URL');
 
 start().catch(error => {
   logger.log('error', error.message, error);
 });
 
 async function start() {
-  logger.log('info', `Connecting to ${DUPLICATE_QUEUE_AMQP_HOST}`);
-  const duplicateQueueConnection = await amqp.connect(DUPLICATE_QUEUE_AMQP_HOST);
+  logger.log('info', `Connecting to ${DUPLICATE_QUEUE_AMQP_URL}`);
+  const duplicateQueueConnection = await amqp.connect(DUPLICATE_QUEUE_AMQP_URL);
   const duplicateChannel = await duplicateQueueConnection.createChannel();
   const duplicateQueueConnector = DuplidateQueueConnector.createDuplicateQueueConnector(duplicateChannel);
   logger.log('info', 'Connected');
