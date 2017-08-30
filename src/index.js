@@ -34,6 +34,8 @@ const MELINDA_CREDENTIALS = {
 
 const DUPLICATE_QUEUE_AMQP_URL = utils.readEnvironmentVariable('DUPLICATE_QUEUE_AMQP_URL');
 
+const mergeConfiguration = require('./config/merge-config');
+
 start().catch(error => {
   logger.log('error', error.message, error);
 });
@@ -48,34 +50,57 @@ async function start() {
   const duplicateDatabaseConnector = DuplicateDatabaseConnector.createDuplicateDatabaseConnector(duplicateDBConfiguration);
   const melindaConnector = MelindaConnector.createMelindaRecordService(MELINDA_API, X_SERVER, MELINDA_CREDENTIALS);
 
-  const recordMergeService = RecordMergeService.createRecordMergeService(melindaConnector);
+  const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, melindaConnector, logger);
 
   duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
     const pairIdentifierString = `${duplicate.first.base}/${duplicate.first.id} - ${duplicate.second.base}/${duplicate.second.id}`;
     logger.log('info', `Handling duplicate pair ${pairIdentifierString}`);
 
-    // Load records from melinda
     logger.log('info', `Loading records from ${MELINDA_API}`);
-    const firstRecord = await melindaConnector.loadRecord(duplicate.first.base, duplicate.first.id);
-    const secondRecord = await melindaConnector.loadRecord(duplicate.second.base, duplicate.second.id);
+    try {
+      const firstRecord = await melindaConnector.loadRecord(duplicate.first.base, duplicate.first.id);
+      const secondRecord = await melindaConnector.loadRecord(duplicate.second.base, duplicate.second.id);
+  
+      logger.log('info', `Records are: ${duplicate.first.base}/${selectRecordId(firstRecord)} and ${duplicate.second.base}/${selectRecordId(secondRecord)}`);
+      
 
-    // check if duplicate can be merged automatically
-    const automaticMergePossible = await recordMergeService.checkMergeability(firstRecord, secondRecord);
+      // check if duplicate can be merged automatically
+      const automaticMergePossible = await recordMergeService.checkMergeability(firstRecord, secondRecord);
 
-    if (!automaticMergePossible) {
-      // CANNOT_MERGE send duplicate to duplicate db
-      await duplicateDatabaseConnector.addDuplicatePair(duplicate.first, duplicate.second);
-      logger.log('warn', `Duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair has been sent to: ${DUPLICATE_DB_API}`);
-      return done();
+      if (!automaticMergePossible) {
+        logger.log('warn', `Duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair will be sent to: ${DUPLICATE_DB_API}`);
+        try {
+          await duplicateDatabaseConnector.addDuplicatePair(duplicate.first, duplicate.second);
+        } catch(error) {
+          logger.log('warn', `Could not add ${pairIdentifierString} to duplicate database: ${error.message}`);
+        }
+        return done();
+      }
+
+      const mergeResult = await recordMergeService.mergeRecords(firstRecord, secondRecord);
+      
+      const mergedRecordIdentifier = `${mergeResult.record.base}/${mergeResult.record.id}`;
+      logger.log('info', `Duplicate pair ${pairIdentifierString} has been merged to ${mergedRecordIdentifier}`);
+
+      done();
+
+    } catch(error) {
+      // error may be
+      // loadRecord error
+      if (error.name === 'AlephRecordError') {
+        logger.log('error', error.message);
+        return;
+      }
+      
+      // merging error?
+      // type error/programming error
+
+      logger.log('error', error.message, error);
+      
     }
-
-    // CAN_MERGE create merged record
-    const mergeResult = await recordMergeService.mergeRecords(firstRecord, secondRecord);
-    
-    const mergedRecordIdentifier = `${mergeResult.record.base}/${mergeResult.record.id}`;
-
-    logger.log('info', `Duplicate pair ${pairIdentifierString} has been merged to ${mergedRecordIdentifier}`);
-    done();
-
   });
+}
+
+function selectRecordId(record) {
+  return _.get(record.fields.find(field => field.tag === '001'), 'value');
 }
