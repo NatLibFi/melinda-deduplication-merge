@@ -60,11 +60,14 @@ async function start() {
     try {
       const firstRecord = await melindaConnector.loadRecord(duplicate.first.base, duplicate.first.id);
       const secondRecord = await melindaConnector.loadRecord(duplicate.second.base, duplicate.second.id);
-  
+
+      //TODO these might be deleted records. No action is required for deleted records.
+      
       logger.log('info', `Records are: ${duplicate.first.base}/${selectRecordId(firstRecord)} and ${duplicate.second.base}/${selectRecordId(secondRecord)}`);
       
 
       // check if duplicate can be merged automatically
+      //TODO this may also fail in situations where manual merge is impossible. Instead of 2, this needs to be split into 3 classes: automergeable, manualmergeable, unmergeable. unmergeables need no action.
       const automaticMergePossible = await recordMergeService.checkMergeability(firstRecord, secondRecord);
 
       if (!automaticMergePossible) {
