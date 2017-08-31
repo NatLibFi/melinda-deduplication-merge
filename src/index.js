@@ -61,16 +61,24 @@ async function start() {
       const firstRecord = await melindaConnector.loadRecord(duplicate.first.base, duplicate.first.id);
       const secondRecord = await melindaConnector.loadRecord(duplicate.second.base, duplicate.second.id);
 
-      //TODO these might be deleted records. No action is required for deleted records.
+      if (isDeleted(firstRecord)) {
+        logger.log('info', `Record ${duplicate.first.base}/${duplicate.first.id} is deleted.`);
+        return done();
+      }
+      if (isDeleted(secondRecord)) {
+        logger.log('info', `Record ${duplicate.second.base}/${duplicate.second.id} is deleted.`);
+        return done();
+      }
       
       logger.log('info', `Records are: ${duplicate.first.base}/${selectRecordId(firstRecord)} and ${duplicate.second.base}/${selectRecordId(secondRecord)}`);
       
+      const mergeability = await recordMergeService.checkMergeability(firstRecord, secondRecord);
 
-      // check if duplicate can be merged automatically
-      //TODO this may also fail in situations where manual merge is impossible. Instead of 2, this needs to be split into 3 classes: automergeable, manualmergeable, unmergeable. unmergeables need no action.
-      const automaticMergePossible = await recordMergeService.checkMergeability(firstRecord, secondRecord);
-
-      if (!automaticMergePossible) {
+      if (mergeability === RecordMergeService.MergeabilityClass.NOT_MERGEABLE) {
+        logger.log('warn', `Duplicate pair ${pairIdentifierString} is not mergeable.`);
+        return done();
+      }
+      if (mergeability === RecordMergeService.MergeabilityClass.MANUALLY_MERGEABLE) {
         logger.log('warn', `Duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair will be sent to: ${DUPLICATE_DB_API}`);
         try {
           await duplicateDatabaseConnector.addDuplicatePair(duplicate.first, duplicate.second);
@@ -79,7 +87,8 @@ async function start() {
         }
         return done();
       }
-
+      logger.log('log', `Duplicate pair ${pairIdentifierString} is mergeable automatically. Merging.`);
+      
       const mergeResult = await recordMergeService.mergeRecords(firstRecord, secondRecord);
       
       const mergedRecordIdentifier = `${mergeResult.record.base}/${mergeResult.record.id}`;
@@ -106,4 +115,8 @@ async function start() {
 
 function selectRecordId(record) {
   return _.get(record.fields.find(field => field.tag === '001'), 'value');
+}
+
+function isDeleted(record) {
+  return record.leader.substr(5,1) === 'd';
 }
