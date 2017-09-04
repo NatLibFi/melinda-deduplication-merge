@@ -7,3 +7,12 @@ git:
 before_install:
     - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
     - git submodule update --init --recursive
+after_script:
+  - if test "$TRAVIS_NODE_VERSION" != "7";then exit 0;fi
+  - if test $TRAVIS_BRANCH = "master";then JOB=$JOB_PROD;elif test $TRAVIS_BRANCH = "test";then JOB=$JOB_TEST;fi
+  - if test ! -z $JOB;then curl -X POST --data "authtoken=$AUTH_TOKEN&argString=-checkout-reference $TRAVIS_COMMIT" https://melinda-ci.lib.helsinki.fi/api/14/job/$JOB/executions;fi
+env:
+  global:
+    - JOB_PROD=c220ffe8-eb85-4eec-b319-396e4b1427b8
+    - JOB_TEST=cfc8909b-512d-443d-9602-94c4fadd3b72
+    - secure: "YaBL2Gd8/O4gx425XIEW+fRCo3IokMtLO7Hwhn+PmyxwWLyflycK4js1SdvQJgc2Qz61zyP9aV8BNUrXXPulHHxH7ud3pZfg5dwuTp+s5ObTu4OH87hxFGAZxrhx8eBSIan7jom43lhdsXft7eRwfm2W8WX/2kBGQWMZrQlP3v+tIVMjZ5nwbv3q64zoLHQh48rPKXWtlA8zUavg/L5PdaMoEeYzFG2VwlI6wd65CY2blE/YWfkQM2ODE/VmubDFDcm5k1dzocd8a12zUMQK0FBUsyu2k42c2+2RdFyGijbKzjIQTYiHesCGEXQ15B9+/XmB2K8Dl+wy7BgqTntIv5sATupsbgth7Ohn7OxJ8z9FbYIKIdX81Gks1UzQGijsXmeDzKsrf3N1FmbBF+CQfHBNsV+SP+7y2/0Qapn4qYPA8Ey0HlFcm8erY76Nh0CTNv/KJSx0y2JpEUfeXy6pFrKry/V03uJ5sstUE/xS7NDJhrIziIye3wNCf9zwL8oVlKp8OoOGCdoNhDBM+oElcwgznefz57HPhL+wW38Z8XQkwqBhtRarx2OHg/YfpDwBYujC/T92qLvDOODDCgbJW9JSbN3sMNd4UO14v0gnJyXMOo+aqceBEz0K42WRT1FmtaBfXKtgiBt8hhiVyjg2VyRlOdhckIFmvsDKaIT7f2A="
