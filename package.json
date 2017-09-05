@@ -11,7 +11,7 @@
     "copy:main:packagejson": "cp package.json build",
     "copy:common:packagejson": "cp melinda-deduplication-common/package.json build/melinda-deduplication-common/package.json",
     "copy:config": "cp src/config/*.json build/config",
-    "test": "npm run flow",
+    "test": "npm run flow && npm run test:unit",
     "test:unit": "BABEL_ENV=test mocha --compilers js:babel-core/register \"src/**/*.spec.js\" \"melinda-deduplication-common/{,!(node_modules)/**/}*.spec.js\"",
     "test:watch": "npm run test:unit -- -w",
     "flow": "flow",
