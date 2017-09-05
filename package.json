@@ -14,7 +14,7 @@
     "test:unit": "BABEL_ENV=test mocha --compilers js:babel-core/register melinda-deduplication-common/**/*.spec.js src/**/*.spec.js",
     "test:watch": "mocha *.spec.js -w",
     "flow": "flow",
-    "dev": "concurrently --kill-others 'npm run build:main -- -w' 'npm run build:common -- -w' 'sleep 2 && nodemon -w build build/index.js'"
+    "dev": "concurrently --kill-others 'npm run build:main -- -w' 'npm run build:common -- -w' 'sleep 5 && nodemon -w build build/index.js'"
   },
   "author": "Pasi Tuominen <pasi.tuominen@gmail.com>",
   "license": "ISC",

@@ -5,6 +5,8 @@ logger.log('info', 'Starting melinda-deduplication-merge');
 
 const _ = require('lodash');
 const amqp = require('amqplib');
+const fs = require('fs');
+const path = require('path');
 
 const utils = require('melinda-deduplication-common/utils/utils');
 const DuplidateQueueConnector = require('melinda-deduplication-common/utils/duplicate-queue-connector');
@@ -12,6 +14,8 @@ const DuplicateDatabaseConnector = require('melinda-deduplication-common/utils/d
 const MelindaConnector = require('melinda-deduplication-common/utils/melinda-record-service');
 
 const RecordMergeService = require('melinda-deduplication-common/utils/record-merge-service');
+const RecordMergeCheck = require('melinda-deduplication-common/utils/record-merge-check');
+const PreferredRecordService = require('melinda-deduplication-common/utils/preferred-record-service');
 
 const DUPLICATE_DB_API = utils.readEnvironmentVariable('DUPLICATE_DB_API');
 const DUPLICATE_DB_MESSAGE = utils.readEnvironmentVariable('DUPLICATE_DB_MESSAGE', 'Automatic Melinda deduplication');
@@ -35,6 +39,8 @@ const MELINDA_CREDENTIALS = {
 const DUPLICATE_QUEUE_AMQP_URL = utils.readEnvironmentVariable('DUPLICATE_QUEUE_AMQP_URL');
 
 const mergeConfiguration = require('./config/merge-config');
+const modelPath = path.resolve(__dirname, 'config', 'select-better-percepton.json');
+const selectPreferredRecordModel = JSON.parse(fs.readFileSync(modelPath, 'utf8'));
 
 start().catch(error => {
   logger.log('error', error.message, error);
@@ -51,6 +57,7 @@ async function start() {
   const melindaConnector = MelindaConnector.createMelindaRecordService(MELINDA_API, X_SERVER, MELINDA_CREDENTIALS);
 
   const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, melindaConnector, logger);
+  const preferredRecordService = PreferredRecordService.createPreferredRecordService(selectPreferredRecordModel);
 
   duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
     const pairIdentifierString = `${duplicate.first.base}/${duplicate.first.id} - ${duplicate.second.base}/${duplicate.second.id}`;
@@ -72,13 +79,15 @@ async function start() {
       
       logger.log('info', `Records are: ${duplicate.first.base}/${selectRecordId(firstRecord)} and ${duplicate.second.base}/${selectRecordId(secondRecord)}`);
       
-      const mergeability = await recordMergeService.checkMergeability(firstRecord, secondRecord);
+      const { preferredRecord, otherRecord } = preferredRecordService.selectPreferredRecord(firstRecord, secondRecord);
 
-      if (mergeability === RecordMergeService.MergeabilityClass.NOT_MERGEABLE) {
+      const mergeability = await RecordMergeCheck.checkMergeability(preferredRecord, otherRecord);
+
+      if (mergeability === RecordMergeCheck.MergeabilityClass.NOT_MERGEABLE) {
         logger.log('warn', `Duplicate pair ${pairIdentifierString} is not mergeable.`);
         return done();
       }
-      if (mergeability === RecordMergeService.MergeabilityClass.MANUALLY_MERGEABLE) {
+      if (mergeability === RecordMergeCheck.MergeabilityClass.MANUALLY_MERGEABLE) {
         logger.log('warn', `Duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair will be sent to: ${DUPLICATE_DB_API}`);
         try {
           await duplicateDatabaseConnector.addDuplicatePair(duplicate.first, duplicate.second);
@@ -89,7 +98,7 @@ async function start() {
       }
       logger.log('log', `Duplicate pair ${pairIdentifierString} is mergeable automatically. Merging.`);
       
-      const mergeResult = await recordMergeService.mergeRecords(firstRecord, secondRecord);
+      const mergeResult = await recordMergeService.mergeRecords({ preferredRecord, otherRecord });
       
       const mergedRecordIdentifier = `${mergeResult.record.base}/${mergeResult.record.id}`;
       logger.log('info', `Duplicate pair ${pairIdentifierString} has been merged to ${mergedRecordIdentifier}`);
