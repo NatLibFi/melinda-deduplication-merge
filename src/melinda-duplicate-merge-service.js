@@ -50,7 +50,7 @@ function create(melindaConnector: MelindaRecordService,
 
       const mergeability = await RecordMergeCheck.checkMergeability(preferredRecord, otherRecord);
 
-      logger.log('warn', `Duplicate pair ${mergeability}.`);
+      logger.log('info', `Mergeability class: ${mergeability}.`);
       if (mergeability === RecordMergeCheck.MergeabilityClass.NOT_MERGEABLE) {
         logger.log('warn', `Duplicate pair ${pairIdentifierString} is not mergeable.`);
         return;
@@ -64,7 +64,7 @@ function create(melindaConnector: MelindaRecordService,
         }
         return;
       }
-      logger.log('log', `Duplicate pair ${pairIdentifierString} is mergeable automatically. Merging.`);
+      logger.log('info', `Duplicate pair ${pairIdentifierString} is mergeable automatically. Merging.`);
       
       const mergeResult = await recordMergeService.mergeRecords({ preferredRecord, otherRecord });
       
