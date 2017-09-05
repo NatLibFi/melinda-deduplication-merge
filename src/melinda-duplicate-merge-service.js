@@ -1,5 +1,10 @@
 // @flow
 import type { MelindaDuplicateMergeService } from './melinda-duplicate-merge-service.flow';
+import type { MelindaRecordService } from 'melinda-deduplication-common/types/melinda-record-service.flow';
+import type { PreferredRecordService } from 'melinda-deduplication-common/types/preferred-record-service.flow';
+import type { DuplicateDatabaseConnector } from 'melinda-deduplication-common/types/duplicate-database-connector.flow';
+import type { RecordMergeService } from 'melinda-deduplication-common/types/record-merge-service.flow';
+
 
 const debug = require('debug')('melinda-duplicate-merge-service');
 const _ = require('lodash');
@@ -8,7 +13,11 @@ const RecordMergeCheck = require('melinda-deduplication-common/utils/record-merg
 
 const DEFAULT_LOGGER = { log: debug };
 
-function create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, options): MelindaDuplicateMergeService {
+function create(melindaConnector: MelindaRecordService, 
+  preferredRecordService: PreferredRecordService, 
+  duplicateDatabaseConnector: DuplicateDatabaseConnector, 
+  recordMergeService: RecordMergeService, 
+  options: mixed): MelindaDuplicateMergeService {
 
   const logger = _.get(options, 'logger', DEFAULT_LOGGER);
   
