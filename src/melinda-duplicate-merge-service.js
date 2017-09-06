@@ -27,8 +27,9 @@ function create(melindaConnector: MelindaRecordService,
 
     logger.log('info', 'Loading records from Aleph');
     try {
-      const firstRecord = await melindaConnector.loadRecord(duplicate.first.base, duplicate.first.id);
-      const secondRecord = await melindaConnector.loadRecord(duplicate.second.base, duplicate.second.id);
+      const loadRecordOptions = { handle_deleted: 1, no_rerouting: 1 };
+      const firstRecord = await melindaConnector.loadRecord(duplicate.first.base, duplicate.first.id, loadRecordOptions);
+      const secondRecord = await melindaConnector.loadRecord(duplicate.second.base, duplicate.second.id, loadRecordOptions);
 
       if (isDeleted(firstRecord)) {
         logger.log('info', `Record ${duplicate.first.base}/${duplicate.first.id} is deleted.`);
@@ -38,10 +39,13 @@ function create(melindaConnector: MelindaRecordService,
         logger.log('info', `Record ${duplicate.second.base}/${duplicate.second.id} is deleted.`);
         return;
       }
+
+      const firstRecordId = selectRecordId(firstRecord);
+      const secondRecordId = selectRecordId(secondRecord);
+
+      logger.log('info', `Records are: ${duplicate.first.base}/${firstRecordId} and ${duplicate.second.base}/${secondRecordId}`);
       
-      logger.log('info', `Records are: ${duplicate.first.base}/${selectRecordId(firstRecord)} and ${duplicate.second.base}/${selectRecordId(secondRecord)}`);
-      
-      if (selectRecordId(firstRecord) === selectRecordId(secondRecord)) {
+      if (firstRecordId === secondRecordId) {
         logger.log('info', 'Pair resolves to same record. Nothing to do.');
         return;
       }
