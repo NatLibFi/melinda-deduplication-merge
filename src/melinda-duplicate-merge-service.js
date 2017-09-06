@@ -51,7 +51,8 @@ function create(melindaConnector: MelindaRecordService,
       }
 
       const { preferredRecord, otherRecord } = preferredRecordService.selectPreferredRecord(firstRecord, secondRecord);
-
+      logger.log('info', `Selected ${selectRecordId(preferredRecord)} as preferred record.`);
+      
       const mergeability = await RecordMergeCheck.checkMergeability(preferredRecord, otherRecord);
 
       logger.log('info', `Mergeability class: ${mergeability}.`);
