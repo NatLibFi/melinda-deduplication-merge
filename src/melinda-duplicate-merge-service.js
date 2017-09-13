@@ -46,7 +46,7 @@ function create(melindaConnector: MelindaRecordService,
       logger.log('info', `Records are: ${duplicate.first.base}/${firstRecordId} and ${duplicate.second.base}/${secondRecordId}`);
       
       if (firstRecordId === secondRecordId) {
-        logger.log('info', 'Pair resolves to same record. Nothing to do.');
+        logger.log('info', 'Records are the same. Nothing to do.');
         return;
       }
 
@@ -69,7 +69,17 @@ function create(melindaConnector: MelindaRecordService,
         }
         return;
       }
-      logger.log('info', `Duplicate pair ${pairIdentifierString} is mergeable automatically. Merging.`);
+      logger.log('info', `Duplicate pair ${pairIdentifierString} is mergeable automatically.`);
+
+      // check for subrecords
+      // if subrecords not mergeable -> duplicate database
+      // if subrecords mergeable automatically -> continue
+
+      // update record merge service to handle subrecords.
+      
+
+      logger.log('info', `Merging ${pairIdentifierString}`);
+      
       
       const mergeResult = await recordMergeService.mergeRecords({ preferredRecord, otherRecord });
       

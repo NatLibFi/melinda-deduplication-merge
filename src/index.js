@@ -61,6 +61,15 @@ async function start() {
 
   const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger });
 
+
+  process.on('SIGTERM', async () => {
+    logger.log('info', 'SIGTERM received');
+    await duplicateChannel.close();
+    await duplicateQueueConnection.close();
+
+    logger.log('info', 'Connections released. Exiting');
+  });
+
   duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
 
     try { 
