@@ -7,8 +7,8 @@ import type { RecordMergeService } from 'melinda-deduplication-common/types/reco
 
 const debug = require('debug')('melinda-duplicate-merge-service');
 const _ = require('lodash');
-const MelindaMergeUpdate = require('melinda-deduplication-common/utils/melinda-merge-update');
 
+const MelindaMergeUpdate = require('melinda-deduplication-common/utils/melinda-merge-update');
 const RecordMergeCheck = require('melinda-deduplication-common/utils/record-merge-check');
 
 const DEFAULT_LOGGER = { log: debug };
