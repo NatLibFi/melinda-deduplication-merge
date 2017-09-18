@@ -40,7 +40,7 @@ const DUPLICATE_QUEUE_AMQP_URL = utils.readEnvironmentVariable('DUPLICATE_QUEUE_
 
 const mergeConfiguration = require('./config/merge-config');
 const componentRecordMatcherConfiguration = require('./config/component-record-similarity-definition.js');
-const modelPath = path.resolve(__dirname, 'config', 'select-better-percepton.json');
+const modelPath = path.resolve(__dirname, 'config', 'select-better-model.json');
 const selectPreferredRecordModel = JSON.parse(fs.readFileSync(modelPath, 'utf8'));
 
 start().catch(error => {
