@@ -85,7 +85,7 @@ function create(melindaConnector: MelindaRecordService,
       } catch(error) {
         
         if (error.name === 'MergeValidationError') {
-          const validationMessages = error.failureMessages.join(', ');
+          const validationMessages = _.get(error, 'failureMessages', []).join(', ');
           logger.log('warn', `Merge validation failed for ${pairIdentifierString}: ${validationMessages}`);
 
           if (error.mergeabilityClass === RecordMergeCheck.MergeabilityClass.MANUALLY_MERGEABLE) {
