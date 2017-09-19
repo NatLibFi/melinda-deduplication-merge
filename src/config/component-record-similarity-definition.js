@@ -166,4 +166,4 @@ const similarityDefinition = {
 };
 /*eslint-enable quotes */
 
-export default similarityDefinition;
+module.exports = similarityDefinition;

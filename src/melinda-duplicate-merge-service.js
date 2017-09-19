@@ -22,7 +22,7 @@ function create(melindaConnector: MelindaRecordService,
   const logger = _.get(options, 'logger', DEFAULT_LOGGER);
   
   async function handleDuplicate(duplicate) {
-    const pairIdentifierString = `${duplicate.first.base}/${duplicate.first.id} - ${duplicate.second.base}/${duplicate.second.id}`;
+    const pairIdentifierString = `(${duplicate.first.base})${duplicate.first.id} - (${duplicate.second.base})${duplicate.second.id}`;
     logger.log('info', `Handling duplicate pair ${pairIdentifierString}`);
     
     if (duplicate.first.base !== duplicate.second.base) {
@@ -76,35 +76,40 @@ function create(melindaConnector: MelindaRecordService,
 
       try {
         const mergedRecordFamily = await recordMergeService.mergeRecords(preferredRecordFamily, otherRecordFamily);
-      
+        
         logger.log('info', `Committing automatically merged pair ${pairIdentifierString} to melinda.`);
-        const commitMergeResult = await MelindaMergeUpdate.commitMerge(melindaConnector, preferredRecordFamily, otherRecordFamily, mergedRecordFamily, {logger});
+        const commitMergeResult = await MelindaMergeUpdate.commitMerge(melindaConnector, base, preferredRecordFamily, otherRecordFamily, mergedRecordFamily, {logger});
 
         const mergedRecordIdentifier = `${base}/${commitMergeResult.recordId}`;
         logger.log('info', `Duplicate pair ${pairIdentifierString} has been merged to ${mergedRecordIdentifier}`);
       } catch(error) {
         
         if (error.name === 'MergeValidationError') {
+          const validationMessages = error.failureMessages.join(', ');
+          logger.log('warn', `Merge validation failed for ${pairIdentifierString}: ${validationMessages}`);
+
           if (error.mergeabilityClass === RecordMergeCheck.MergeabilityClass.MANUALLY_MERGEABLE) {
-            logger.log('warn', `Subrecords of duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair will be sent to duplicate database`);
+            logger.log('warn', `Duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair will be sent to duplicate database`);
             try {
               await duplicateDatabaseConnector.addDuplicatePair(duplicate.first, duplicate.second);
             } catch(error) {
               logger.log('warn', `Could not add ${pairIdentifierString} to duplicate database: ${error.message}`);
             }
+            return;
           }
           if (error.mergeabilityClass === RecordMergeCheck.MergeabilityClass.NOT_MERGEABLE) {
             logger.log('warn', `Duplicate pair ${pairIdentifierString} is not mergeable.`);
             return;
           }
 
+          logger.log('warn', error, `mergability: ${error.mergeabilityClass}`);
           return;
         }
         debug(error);
         throw error;
       }
     } catch(error) {
-
+      
       if (error.name === 'AlephRecordError') {
         logger.log('error', error.message);
         return;
