@@ -4,6 +4,8 @@
 [include]
 
 [libs]
+node_modules/*
+melinda-deduplication-common/node_modules/*
 
 [options]
 module.system.node.resolve_dirname=node_modules
