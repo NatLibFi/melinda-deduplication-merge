@@ -12,6 +12,7 @@ const MelindaMergeUpdate = require('melinda-deduplication-common/utils/melinda-m
 const RecordMergeCheck = require('melinda-deduplication-common/utils/record-merge-check');
 
 const DEFAULT_LOGGER = { log: debug };
+const DEFALT_NOOP = false;
 
 function create(melindaConnector: MelindaRecordService, 
   preferredRecordService: PreferredRecordService, 
@@ -20,6 +21,7 @@ function create(melindaConnector: MelindaRecordService,
   options: mixed): MelindaDuplicateMergeService {
 
   const logger = _.get(options, 'logger', DEFAULT_LOGGER);
+  const noop = _.get(options, 'noop', DEFALT_NOOP);
   
   async function handleDuplicate(duplicate) {
     const pairIdentifierString = `(${duplicate.first.base})${duplicate.first.id} - (${duplicate.second.base})${duplicate.second.id}`;
@@ -77,6 +79,10 @@ function create(melindaConnector: MelindaRecordService,
       try {
         const mergedRecordFamily = await recordMergeService.mergeRecords(preferredRecordFamily, otherRecordFamily);
         
+        if (noop) {
+          logger.log('info', `noop -flag enabled. Not saving automatically merged pair ${pairIdentifierString} to melinda.`);
+          return;
+        }
         logger.log('info', `Committing automatically merged pair ${pairIdentifierString} to melinda.`);
         const commitMergeResult = await MelindaMergeUpdate.commitMerge(melindaConnector, base, preferredRecordFamily, otherRecordFamily, mergedRecordFamily, {logger});
 
@@ -91,6 +97,10 @@ function create(melindaConnector: MelindaRecordService,
           if (error.mergeabilityClass === RecordMergeCheck.MergeabilityClass.MANUALLY_MERGEABLE) {
             logger.log('warn', `Duplicate pair ${pairIdentifierString} cannot be merged automatically. Pair will be sent to duplicate database`);
             try {
+              if (noop) {
+                logger.log('info', `noop -flag enabled. Not sending duplicate ${pairIdentifierString} to duplicate database.`);
+                return;
+              }
               await duplicateDatabaseConnector.addDuplicatePair(duplicate.first, duplicate.second);
             } catch(error) {
               logger.log('warn', `Could not add ${pairIdentifierString} to duplicate database: ${error.message}`);
