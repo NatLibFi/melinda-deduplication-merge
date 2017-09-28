@@ -39,7 +39,8 @@ const MELINDA_CREDENTIALS = {
 const DUPLICATE_QUEUE_AMQP_URL = utils.readEnvironmentVariable('DUPLICATE_QUEUE_AMQP_URL');
 
 const mergeConfiguration = require('./config/merge-config');
-const modelPath = path.resolve(__dirname, 'config', 'select-better-percepton.json');
+const componentRecordMatcherConfiguration = require('./config/component-record-similarity-definition.js');
+const modelPath = path.resolve(__dirname, 'config', 'select-better-model.json');
 const selectPreferredRecordModel = JSON.parse(fs.readFileSync(modelPath, 'utf8'));
 
 start().catch(error => {
@@ -56,10 +57,19 @@ async function start() {
   const duplicateDatabaseConnector = DuplicateDatabaseConnector.createDuplicateDatabaseConnector(duplicateDBConfiguration);
   const melindaConnector = MelindaConnector.createMelindaRecordService(MELINDA_API, X_SERVER, MELINDA_CREDENTIALS);
 
-  const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, melindaConnector, logger);
+  const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, componentRecordMatcherConfiguration);
   const preferredRecordService = PreferredRecordService.createPreferredRecordService(selectPreferredRecordModel);
 
   const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger });
+
+
+  process.on('SIGTERM', async () => {
+    logger.log('info', 'SIGTERM received');
+    await duplicateChannel.close();
+    await duplicateQueueConnection.close();
+
+    logger.log('info', 'Connections released. Exiting');
+  });
 
   duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
 
