@@ -36,6 +36,8 @@ const MELINDA_CREDENTIALS = {
   password: MELINDA_PASSWORD
 };
 
+const NOOP = utils.readEnvironmentVariable('NOOP', false) != false;
+
 const DUPLICATE_QUEUE_AMQP_URL = utils.readEnvironmentVariable('DUPLICATE_QUEUE_AMQP_URL');
 
 const mergeConfiguration = require('./config/merge-config');
@@ -60,7 +62,7 @@ async function start() {
   const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, componentRecordMatcherConfiguration);
   const preferredRecordService = PreferredRecordService.createPreferredRecordService(selectPreferredRecordModel);
 
-  const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger });
+  const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger, noop: NOOP });
 
 
   process.on('SIGTERM', async () => {
