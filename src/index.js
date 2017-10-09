@@ -96,7 +96,7 @@ process.on('SIGTERM', async () => {
   logger.log('info', 'SIGTERM received');
   service.stop();
   clearInterval(onlinePoller);
-  logger.log('info', 'Connections released. Exiting');
+  logger.log('info', 'Exiting');
 });
 
 function createService() {
@@ -131,12 +131,12 @@ function createService() {
           logger.log('error', error.message, error);
         }
       });
-
     },
+
     stop: async() => {
-      await duplicateChannel.close();
-      await duplicateQueueConnection.close();
-      logger.log('info', 'Connections closed');
+      duplicateChannel && await duplicateChannel.close();
+      duplicateQueueConnection && await duplicateQueueConnection.close();
+      logger.log('info', 'Connections released.');
     }
   };
 }
