@@ -51,14 +51,6 @@ const onlineTimes = utils.parseTimeRanges(ONLINE);
 
 const service = createService();
 
-process.on('SIGTERM', async () => {
-  logger.log('info', 'SIGTERM received');
-  await duplicateChannel.close();
-  await duplicateQueueConnection.close();
-
-  logger.log('info', 'Connections released. Exiting');
-});
-
 const initialAction = shouldBeRunningNow() ? 'Starting service' : 'Waiting before starting the service';
 logger.log('info', `Online times: ${ONLINE}. Current time: ${utils.getCurrentTime()}. ${initialAction}.`);
 
@@ -98,7 +90,14 @@ function shouldBeRunning(now) {
 }
 
 updateOnlineState();
-setInterval(updateOnlineState, 5000);
+const onlinePoller = setInterval(updateOnlineState, 5000);
+
+process.on('SIGTERM', async () => {
+  logger.log('info', 'SIGTERM received');
+  service.stop();
+  clearInterval(onlinePoller);
+  logger.log('info', 'Connections released. Exiting');
+});
 
 function createService() {
 
@@ -123,7 +122,6 @@ function createService() {
     
       const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger, noop: NOOP });
 
-      
       duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
 
         try { 
