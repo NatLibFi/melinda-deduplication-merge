@@ -45,41 +45,100 @@ const componentRecordMatcherConfiguration = require('./config/component-record-s
 const modelPath = path.resolve(__dirname, 'config', 'select-better-model.json');
 const selectPreferredRecordModel = JSON.parse(fs.readFileSync(modelPath, 'utf8'));
 
-start().catch(error => {
-  logger.log('error', error.message, error);
+const ONLINE = utils.readEnvironmentVariable('ONLINE', '00:00-21:45, 22:30-24:00');
+const onlineTimes = utils.parseTimeRanges(ONLINE);
+
+
+const service = createService();
+
+process.on('SIGTERM', async () => {
+  logger.log('info', 'SIGTERM received');
+  await duplicateChannel.close();
+  await duplicateQueueConnection.close();
+
+  logger.log('info', 'Connections released. Exiting');
 });
 
-async function start() {
-  logger.log('info', `Connecting to ${DUPLICATE_QUEUE_AMQP_URL}`);
-  const duplicateQueueConnection = await amqp.connect(DUPLICATE_QUEUE_AMQP_URL);
-  const duplicateChannel = await duplicateQueueConnection.createChannel();
-  const duplicateQueueConnector = DuplidateQueueConnector.createDuplicateQueueConnector(duplicateChannel);
-  logger.log('info', 'Connected');
+const initialAction = shouldBeRunningNow() ? 'Starting service' : 'Waiting before starting the service';
+logger.log('info', `Online times: ${ONLINE}. Current time: ${utils.getCurrentTime()}. ${initialAction}.`);
 
-  const duplicateDatabaseConnector = DuplicateDatabaseConnector.createDuplicateDatabaseConnector(duplicateDBConfiguration);
-  const melindaConnector = MelindaConnector.createMelindaRecordService(MELINDA_API, X_SERVER, MELINDA_CREDENTIALS);
+let isRunning = false;
+function updateOnlineState() {
+  const now = utils.parseTime(utils.getCurrentTime());
+  if (shouldBeRunning(now)) {
+    if (!isRunning) {
 
-  const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, componentRecordMatcherConfiguration);
-  const preferredRecordService = PreferredRecordService.createPreferredRecordService(selectPreferredRecordModel);
+      logger.log('info', `It's ${utils.getCurrentTime()}. Starting the service.`);
+      
+      service.start().catch(error => {
+        logger.log('error', error.message, error);
+      });
 
-  const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger, noop: NOOP });
-
-
-  process.on('SIGTERM', async () => {
-    logger.log('info', 'SIGTERM received');
-    await duplicateChannel.close();
-    await duplicateQueueConnection.close();
-
-    logger.log('info', 'Connections released. Exiting');
-  });
-
-  duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
-
-    try { 
-      await melindaDuplicateMergeService.handleDuplicate(duplicate);
-      return done();
-    } catch(error) {
-      logger.log('error', error.message, error);
+      isRunning = true;
     }
-  });
+  } else {
+    if (isRunning) {
+      
+      logger.log('info', `It's ${utils.getCurrentTime()}. Stopping the service.`);
+      
+      service.stop().catch(error => { 
+        logger.log('error', error.message, error);
+      });
+      isRunning = false;
+    }
+  }
+}
+
+function shouldBeRunningNow() {
+  const now = utils.parseTime(utils.getCurrentTime());
+  return shouldBeRunning(now);
+}
+function shouldBeRunning(now) {
+  return onlineTimes.some(({from, to}) => from <= now && now <= to);
+}
+
+updateOnlineState();
+setInterval(updateOnlineState, 5000);
+
+function createService() {
+
+  let duplicateQueueConnection;
+  let duplicateChannel;
+
+  return {
+    start: async() => {
+
+      logger.log('info', `Connecting to ${DUPLICATE_QUEUE_AMQP_URL}`);
+      duplicateQueueConnection = await amqp.connect(DUPLICATE_QUEUE_AMQP_URL);
+      duplicateChannel = await duplicateQueueConnection.createChannel();
+      const duplicateQueueConnector = DuplidateQueueConnector.createDuplicateQueueConnector(duplicateChannel);
+      logger.log('info', 'Connected');
+
+      
+      const duplicateDatabaseConnector = DuplicateDatabaseConnector.createDuplicateDatabaseConnector(duplicateDBConfiguration);
+      const melindaConnector = MelindaConnector.createMelindaRecordService(MELINDA_API, X_SERVER, MELINDA_CREDENTIALS);
+
+      const recordMergeService = RecordMergeService.createRecordMergeService(mergeConfiguration, componentRecordMatcherConfiguration);
+      const preferredRecordService = PreferredRecordService.createPreferredRecordService(selectPreferredRecordModel);
+    
+      const melindaDuplicateMergeService = MelindaDuplicateMergeService.create(melindaConnector, preferredRecordService, duplicateDatabaseConnector, recordMergeService, { logger: logger, noop: NOOP });
+
+      
+      duplicateQueueConnector.listenForDuplicates(async (duplicate, done) => {
+
+        try { 
+          await melindaDuplicateMergeService.handleDuplicate(duplicate);
+          return done();
+        } catch(error) {
+          logger.log('error', error.message, error);
+        }
+      });
+
+    },
+    stop: async() => {
+      await duplicateChannel.close();
+      await duplicateQueueConnection.close();
+      logger.log('info', 'Connections closed');
+    }
+  };
 }
