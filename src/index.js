@@ -129,6 +129,11 @@ function createService() {
           return done();
         } catch(error) {
           logger.log('error', error.message, error);
+          logger.log('info', 'Waiting 60 seconds before continuing');
+          setTimeout(() => {
+            return done();
+          }, 60000);
+          
         }
       });
     },
