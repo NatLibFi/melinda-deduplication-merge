@@ -45,52 +45,13 @@ const componentRecordMatcherConfiguration = require('./config/component-record-s
 const modelPath = path.resolve(__dirname, 'config', 'select-better-model.json');
 const selectPreferredRecordModel = JSON.parse(fs.readFileSync(modelPath, 'utf8'));
 
-const ONLINE = utils.readEnvironmentVariable('ONLINE', '00:00-21:45, 22:30-24:00');
-const onlineTimes = utils.parseTimeRanges(ONLINE);
+const createTimer = require('melinda-deduplication-common/utils/start-stop-timer');
 
+const ONLINE = utils.readEnvironmentVariable('ONLINE', '00:00-21:45, 22:30-24:00');
 
 const service = createService();
 
-const initialAction = shouldBeRunningNow() ? 'Starting service' : 'Waiting before starting the service';
-logger.log('info', `Online times: ${ONLINE}. Current time: ${utils.getCurrentTime()}. ${initialAction}.`);
-
-let isRunning = false;
-function updateOnlineState() {
-  const now = utils.parseTime(utils.getCurrentTime());
-  if (shouldBeRunning(now)) {
-    if (!isRunning) {
-
-      logger.log('info', `It's ${utils.getCurrentTime()}. Starting the service.`);
-      
-      service.start().catch(error => {
-        logger.log('error', error.message, error);
-      });
-
-      isRunning = true;
-    }
-  } else {
-    if (isRunning) {
-      
-      logger.log('info', `It's ${utils.getCurrentTime()}. Stopping the service.`);
-      
-      service.stop().catch(error => { 
-        logger.log('error', error.message, error);
-      });
-      isRunning = false;
-    }
-  }
-}
-
-function shouldBeRunningNow() {
-  const now = utils.parseTime(utils.getCurrentTime());
-  return shouldBeRunning(now);
-}
-function shouldBeRunning(now) {
-  return onlineTimes.some(({from, to}) => from <= now && now <= to);
-}
-
-updateOnlineState();
-const onlinePoller = setInterval(updateOnlineState, 5000);
+const onlinePoller = createTimer(ONLINE, service, logger);
 
 process.on('SIGTERM', async () => {
   logger.log('info', 'SIGTERM received');
