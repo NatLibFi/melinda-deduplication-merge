@@ -62,6 +62,211 @@ module.exports = {
   fields: {
     '006': { 'action': 'controlfield' },
     '007': { 'action': 'controlfield' },
+    "008": { 
+      "action": "mergeControlfield",
+      "options": {
+        "actions": [
+          {
+            "formats": ["BK", "CF", "CR", "MU", "MX", "VM", "MP"],
+            "range": [15, 17],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["BK", "CF", "CR", "MU", "MX", "VM", "MP"],
+            "range": [35, 37],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["BK"],
+            "range": [18, 21],
+            "significantCaret": true,
+            "type": "combine"
+          },
+          {
+            "formats": ["BK", "CF", "MU", "VM"],
+            "range": [22, 22],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["BK", "CF", "CR", "MU", "MX"],
+            "range": [23, 23],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          }, 
+          {
+            "formats": ["MP"],
+            "range": [29, 29],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },           
+          {
+            "formats": ["BK"],
+            "range": [24, 27],
+            "significantCaret": false,
+            "type": "combine"
+          },          
+          {
+            "formats": ["BK", "CF", "CR", "MP", "VM"],
+            "range": [28, 28],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },          
+          {
+            "formats": ["BK", "CR", "VM"],
+            "range": [29, 29],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },                  
+          {
+            "formats": ["BK"],
+            "range": [30, 30],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },           
+          {
+            "formats": ["BK", "MP"],
+            "range": [31, 31],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },           
+          {
+            "formats": ["BK"],
+            "range": [33, 33],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },               
+          {
+            "formats": ["MU"],
+            "range": [30, 31],
+            "significantCaret": true,
+            "type": "combine"
+          },      
+          {
+            "formats": ["BK"],
+            "range": [34, 34],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },    
+          {
+            "formats": ["CR"],
+            "range": [18, 18],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["CR"],
+            "range": [19, 19],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["CR"],
+            "range": [21, 21],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },          
+          {
+            "formats": ["CR"],
+            "range": [22, 22],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          }, 
+          {
+            "formats": ["CR"],
+            "range": [24, 24],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },          
+          {
+            "formats": ["CR"],
+            "range": [25, 27],
+            "significantCaret": true,
+            "type": "combine"
+          }, 
+          {
+            "formats": ["CR"],
+            "range": [33, 33],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          }, 
+          {
+            "formats": ["CR"],
+            "range": [34, 34],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },          
+          {
+            "formats": ["MP"],
+            "range": [18, 21],
+            "significantCaret": true,
+            "type": "combine"
+          },  
+          {
+            "formats": ["MP"],
+            "range": [25, 25],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },  
+          {
+            "formats": ["MP"],
+            "range": [33, 34],
+            "significantCaret": true,
+            "type": "combine"
+          },
+          {
+            "formats": ["MU"],
+            "range": [18, 19],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["MU"],
+            "range": [20, 20],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["MU"],
+            "range": [21, 21],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },          
+          {
+            "formats": ["MU"],
+            "range": [24, 29],
+            "significantCaret": true,
+            "type": "combine"
+          },
+          {
+            "formats": ["MU"],
+            "range": [33, 33],
+            "significantCaret": true,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["VM"],
+            "range": [18, 20],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },
+          {
+            "formats": ["VM"],
+            "range": [33, 33],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },          
+          {
+            "formats": ["VM"],
+            "range": [34, 34],
+            "significantCaret": false,
+            "type": "selectNonEmpty"
+          },          
+        ]
+      }
+    },
     "010": { "action": "copy", "options": { "compareWithout": ["9"] } },
     "014": { "action": "copy", "options": { "compareWithout": ["9"] } },
     "015": { "action": "copy", "options": { "compareWithout": ["9"] } },
